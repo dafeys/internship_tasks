@@ -1,3 +1,4 @@
+# https://www.codewars.com/kata/ranking-nba-teams
 
 r = "Los Angeles Clippers 104 Dallas Mavericks 88,New York Knicks 101 Atlanta Hawks 112,Indiana Pacers 103 Memphis Grizzlies 112,"\
      "Los Angeles Lakers 111 Minnesota Timberwolves 112,Phoenix Suns 95 Dallas Mavericks 111,Portland Trail Blazers 112 New Orleans Pelicans 94,"\
@@ -19,37 +20,57 @@ r = "Los Angeles Clippers 104 Dallas Mavericks 88,New York Knicks 101 Atlanta Ha
 
          
 def nba_cup(r, to_find)
-  ranking = {}
+  return "" if to_find.empty?
+
+  ranking = Hash.new { |hash, key| hash[key] = {W: 0, D: 0, L: 0, Scored: 0, Conceded: 0, Points: 0} }
   games = r.split(',')
 
   games.each do |game|
-    scores = game.scan(/\b\d+\b/).map(&:to_i)
-    #puts "Team 1 Score: #{scores[0]}"
-    #puts "Team 2 Score: #{scores[1]}"
+    return "Error(float number):#{game}" if game.include?(".")
 
-    index1 = game.index(scores[0].to_s)
-    index2 = game.index(scores[1].to_s)
+    game_scores = game.scan(/\b\d+\b/).map(&:to_i)
 
-    team_1 = game[0..index1-2]
-    team_2 = game[(index1+scores[0].to_s.length+1)..index2-2]
+    score1_index = game.index(game_scores[0].to_s)
+    score2_index = game.index(game_scores[1].to_s)
 
-    #puts "Team 1: #{team_1}"
-    #puts "Team 2: #{team_2}"
+    team1 = game[0..score1_index-2]
+    team2 = game[(score1_index+game_scores[0].to_s.length+1)..score2_index-2]
 
-    ranking[team_1.to_sym] = {Score: scores[0], Score2: scores[1]}
+    ranking[team1.to_sym][:Scored] += game_scores[0]
+    ranking[team2.to_sym][:Scored] += game_scores[1]
+
+    ranking[team1.to_sym][:Conceded] += game_scores[1]
+    ranking[team2.to_sym][:Conceded] += game_scores[0]
+    
+    if game_scores[0] > game_scores[1]
+      ranking[team1.to_sym][:W] += 1
+      ranking[team2.to_sym][:L] += 1
+      ranking[team1.to_sym][:Points] += 3
+    elsif game_scores[0] == game_scores[1]
+      ranking[team1.to_sym][:D] += 1
+      ranking[team2.to_sym][:D] += 1
+      ranking[team1.to_sym][:Points] += 1
+      ranking[team2.to_sym][:Points] += 1
+    else
+      ranking[team2.to_sym][:W] += 1
+      ranking[team1.to_sym][:L] += 1
+      ranking[team2.to_sym][:Points] += 3
+    end
+
   end
-  #p ranking
-  p ranking[:'Phoenix Suns']#[Score]
-  ranking[:'Phoenix Suns'][:Score] += 1000
-  p ranking[:'Phoenix Suns']#[Score]
+  
+  if ranking.key?(to_find.to_sym)
+    formatted_data = ranking[to_find.to_sym].map { |key, value| "#{key}=#{value}" }
+    scores_string = formatted_data.join(";")
+    "#{to_find}:#{scores_string}"
+  else
+    "#{to_find}:This team didn't play!"
+  end
 end
 
-nba_cup(r, 'NYK')
 
-        # Test.assert_equals(nba_cup(r, "Boston Celtics"),
-        #         "Boston Celtics:W=4;D=0;L=0;Scored=403;Conceded=350;Points=12")
-        # Test.assert_equals(nba_cup(r, "Boston Celt"),
-        #         "Boston Celt:This team didn't play!")
-        # Test.assert_equals(nba_cup(r, "Charlotte Hornets"),
-        #         "Charlotte Hornets:W=2;D=0;L=2;Scored=373;Conceded=382;Points=6")
-
+p nba_cup(r, "Portland Trail Blazers")
+p nba_cup(r, "Boston Celtics")
+p nba_cup(r, "Charlotte Hornets")
+p nba_cup(r, "Moesko")
+p nba_cup(r, "")
